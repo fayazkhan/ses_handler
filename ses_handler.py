@@ -24,7 +24,9 @@ class SESHandler(Handler):
     Requires the boto library.
     https://github.com/boto/boto
 
-    Make sure that the `sender` email address is verified first.
+    Make sure that the `sender` email address has been verified.
+    And if you haven't acquired production access yet,
+    verify the email addresses for the `recipients` too.
     Also be aware of the maximum send quota you can send from your
     AWS account.
 
