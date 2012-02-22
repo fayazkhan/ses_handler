@@ -42,7 +42,7 @@ class SESHandler(Handler):
 
     def close(self):
         self._ses_connection.close()
-        super(Handler, self).close()
+        super(SESHandler, self).close()
 
     def emit(self, record):
         try:
