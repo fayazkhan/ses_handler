@@ -66,8 +66,8 @@ class SESHandler(Handler):
         if self._limit_exceeded:
             result = self._ses_connection.get_send_quota()[
                     'GetSendQuotaResponse']['GetSendQuotaResult']
-            self._limit_exceeded = (Decimal('Max24HourSend') <=
-                                    Decimal('SentLast24Hours'))
+            self._limit_exceeded = (Decimal(result['Max24HourSend']) <=
+                                    Decimal(result['SentLast24Hours']))
         return self._limit_exceeded
 
     @limit_exceeded.setter
