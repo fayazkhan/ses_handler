@@ -13,9 +13,11 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from decimal import Decimal
 from logging import Handler, NOTSET
 
 import boto
+from boto.ses.exceptions import SESMaxSendingRateExceededError
 
 
 class SESHandler(Handler):
@@ -41,16 +43,33 @@ class SESHandler(Handler):
         self._sender = sender
         self._recipients = recipients
         self._subject = subject
+        self.limit_exceeded = False
 
     def close(self):
         self._ses_connection.close()
         super(SESHandler, self).close()
 
     def emit(self, record):
-        try:
-            message = self.format(record)
-            self._ses_connection.send_email(
-                    source=self._sender, subject=self._subject,
-                    body=message, to_addresses=self._recipients)
-        except Exception:
-            self.handleError(record)
+        if not self.limit_exceeded:
+            try:
+                message = self.format(record)
+                self._ses_connection.send_email(
+                        source=self._sender, subject=self._subject,
+                        body=message, to_addresses=self._recipients)
+            except SESMaxSendingRateExceededError:
+                self.limit_exceeded = True
+            except Exception:
+                self.handleError(record)
+
+    @property
+    def limit_exceeded(self):
+        if self._limit_exceeded:
+            result = self._ses_connection.get_send_quota()[
+                    'GetSendQuotaResponse']['GetSendQuotaResult']
+            self._limit_exceeded = (Decimal('Max24HourSend') <=
+                                    Decimal('SentLast24Hours'))
+        return self._limit_exceeded
+
+    @limit_exceeded.setter
+    def limit_exceeded(self, value):
+        self._limit_exceeded = value
